@@ -1,0 +1,17 @@
+pip install --upgrade jupyter Numpy Scipy Sympy Sklearn Pandas Seaborn pillow opencv-python xlsxwriter xlwt xlrd pyqt5 pyqt5-tools keras spyder3
+
+python -m pip install -U matplotlib
+
+
+ virtualenv 
+pip install virtualenv
+python -m venv C:\envs\tensor_flow
+cd C:\envs\tensor_flow\activate
+
+conda install tensorflow keras Numpy Scipy Sympy Sklearn Pandas Seaborn pillow opencv xlsxwriter xlwt xlrd pyqt5 pyqt5-tools matplotlib jupyter django pydot
+
+conda update tensorflow keras Numpy Scipy Sympy scikit-learn Pandas Seaborn pillow opencv xlsxwriter xlwt xlrd pyqt5 pyqt5-tools matplotlib jupyter django pydot
+pip install theano
+
+conda remove -n mypythonPhD theano
+conda activate mypythonPhD

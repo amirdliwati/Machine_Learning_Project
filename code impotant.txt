@@ -1,0 +1,1 @@
+pyuc5 name file.ui > name file.py >>>> convert file from GUI XML to fiel python

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html class="gr__wiseodd_github_io" lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+        <meta property="og:image" content="http://wiseodd.github.io/img/code.png">
+    
+
+    <meta property="og:description" content="There are many attempts to improve Gradient Descent: some add momentum, some add adaptive learning rate. Let's see what's out there in the realm of neural nets optimization.">
+
+    <title>Beyond SGD: Gradient Descent with Momentum and Adaptive Learning Rate - Agustinus Kristiadi's Blog</title>
+
+    <link rel="shortcut icon" type="image/png" href="https://wiseodd.github.io/favicon.png">
+
+    <link rel="canonical" href="http://wiseodd.github.io/techblog/2016/06/22/nn-optimization/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/bootstrap.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/clean-blog.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/syntax.css">
+
+    <!-- Custom Fonts -->
+    <link href="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/font-awesome.css" rel="stylesheet" type="text/css">
+    <link href="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/css.css" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">.mjx-chtml {display: inline-block; line-height: 0; text-indent: 0; text-align: left; text-transform: none; font-style: normal; font-weight: normal; font-size: 100%; font-size-adjust: none; letter-spacing: normal; word-wrap: normal; word-spacing: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; margin: 0; padding: 1px 0}
+.MJXc-display {display: block; text-align: center; margin: 1em 0; padding: 0}
+.mjx-chtml[tabindex]:focus, body :focus .mjx-chtml[tabindex] {display: inline-table}
+.mjx-full-width {text-align: center; display: table-cell!important; width: 10000em}
+.mjx-math {display: inline-block; border-collapse: separate; border-spacing: 0}
+.mjx-math * {display: inline-block; -webkit-box-sizing: content-box!important; -moz-box-sizing: content-box!important; box-sizing: content-box!important; text-align: left}
+.mjx-numerator {display: block; text-align: center}
+.mjx-denominator {display: block; text-align: center}
+.MJXc-stacked {height: 0; position: relative}
+.MJXc-stacked > * {position: absolute}
+.MJXc-bevelled > * {display: inline-block}
+.mjx-stack {display: inline-block}
+.mjx-op {display: block}
+.mjx-under {display: table-cell}
+.mjx-over {display: block}
+.mjx-over > * {padding-left: 0px!important; padding-right: 0px!important}
+.mjx-under > * {padding-left: 0px!important; padding-right: 0px!important}
+.mjx-stack > .mjx-sup {display: block}
+.mjx-stack > .mjx-sub {display: block}
+.mjx-prestack > .mjx-presup {display: block}
+.mjx-prestack > .mjx-presub {display: block}
+.mjx-delim-h > .mjx-char {display: inline-block}
+.mjx-surd {vertical-align: top}
+.mjx-mphantom * {visibility: hidden}
+.mjx-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 2px 3px; font-style: normal; font-size: 90%}
+.mjx-annotation-xml {line-height: normal}
+.mjx-menclose > svg {fill: none; stroke: currentColor}
+.mjx-mtr {display: table-row}
+.mjx-mlabeledtr {display: table-row}
+.mjx-mtd {display: table-cell; text-align: center}
+.mjx-label {display: table-row}
+.mjx-box {display: inline-block}
+.mjx-block {display: block}
+.mjx-span {display: inline}
+.mjx-char {display: block; white-space: pre}
+.mjx-itable {display: inline-table; width: auto}
+.mjx-row {display: table-row}
+.mjx-cell {display: table-cell}
+.mjx-table {display: table; width: 100%}
+.mjx-line {display: block; height: 0}
+.mjx-strut {width: 0; padding-top: 1em}
+.mjx-vsize {width: 0}
+.MJXc-space1 {margin-left: .167em}
+.MJXc-space2 {margin-left: .222em}
+.MJXc-space3 {margin-left: .278em}
+.mjx-chartest {display: block; visibility: hidden; position: absolute; top: 0; line-height: normal; font-size: 500%}
+.mjx-chartest .mjx-char {display: inline}
+.mjx-chartest .mjx-box {padding-top: 1000px}
+.MJXc-processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MJXc-processed {display: none}
+.mjx-test {display: block; font-style: normal; font-weight: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-transform: none; letter-spacing: normal; word-spacing: normal; overflow: hidden; height: 1px}
+.mjx-ex-box-test {position: absolute; width: 1px; height: 60ex}
+.mjx-line-box-test {display: table!important}
+.mjx-line-box-test span {display: table-cell!important; width: 10000em!important; min-width: 0; max-width: none; padding: 0; border: 0; margin: 0}
+#MathJax_CHTML_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.mjx-chtml .mjx-noError {line-height: 1.2; vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+.MJXc-TeX-unknown-R {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: normal; font-weight: normal}
+.MJXc-TeX-unknown-I {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: italic; font-weight: normal}
+.MJXc-TeX-unknown-B {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: normal; font-weight: bold}
+.MJXc-TeX-unknown-BI {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: italic; font-weight: bold}
+.MJXc-TeX-ams-R {font-family: MJXc-TeX-ams-R,MJXc-TeX-ams-Rw}
+.MJXc-TeX-cal-B {font-family: MJXc-TeX-cal-B,MJXc-TeX-cal-Bx,MJXc-TeX-cal-Bw}
+.MJXc-TeX-frak-R {font-family: MJXc-TeX-frak-R,MJXc-TeX-frak-Rw}
+.MJXc-TeX-frak-B {font-family: MJXc-TeX-frak-B,MJXc-TeX-frak-Bx,MJXc-TeX-frak-Bw}
+.MJXc-TeX-math-BI {font-family: MJXc-TeX-math-BI,MJXc-TeX-math-BIx,MJXc-TeX-math-BIw}
+.MJXc-TeX-sans-R {font-family: MJXc-TeX-sans-R,MJXc-TeX-sans-Rw}
+.MJXc-TeX-sans-B {font-family: MJXc-TeX-sans-B,MJXc-TeX-sans-Bx,MJXc-TeX-sans-Bw}
+.MJXc-TeX-sans-I {font-family: MJXc-TeX-sans-I,MJXc-TeX-sans-Ix,MJXc-TeX-sans-Iw}
+.MJXc-TeX-script-R {font-family: MJXc-TeX-script-R,MJXc-TeX-script-Rw}
+.MJXc-TeX-type-R {font-family: MJXc-TeX-type-R,MJXc-TeX-type-Rw}
+.MJXc-TeX-cal-R {font-family: MJXc-TeX-cal-R,MJXc-TeX-cal-Rw}
+.MJXc-TeX-main-B {font-family: MJXc-TeX-main-B,MJXc-TeX-main-Bx,MJXc-TeX-main-Bw}
+.MJXc-TeX-main-I {font-family: MJXc-TeX-main-I,MJXc-TeX-main-Ix,MJXc-TeX-main-Iw}
+.MJXc-TeX-main-R {font-family: MJXc-TeX-main-R,MJXc-TeX-main-Rw}
+.MJXc-TeX-math-I {font-family: MJXc-TeX-math-I,MJXc-TeX-math-Ix,MJXc-TeX-math-Iw}
+.MJXc-TeX-size1-R {font-family: MJXc-TeX-size1-R,MJXc-TeX-size1-Rw}
+.MJXc-TeX-size2-R {font-family: MJXc-TeX-size2-R,MJXc-TeX-size2-Rw}
+.MJXc-TeX-size3-R {font-family: MJXc-TeX-size3-R,MJXc-TeX-size3-Rw}
+.MJXc-TeX-size4-R {font-family: MJXc-TeX-size4-R,MJXc-TeX-size4-Rw}
+@font-face {font-family: MJXc-TeX-ams-R; src: local('MathJax_AMS'), local('MathJax_AMS-Regular')}
+@font-face {font-family: MJXc-TeX-ams-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_AMS-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_AMS-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_AMS-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-cal-B; src: local('MathJax_Caligraphic Bold'), local('MathJax_Caligraphic-Bold')}
+@font-face {font-family: MJXc-TeX-cal-Bx; src: local('MathJax_Caligraphic'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-cal-Bw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Caligraphic-Bold.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Bold.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-frak-R; src: local('MathJax_Fraktur'), local('MathJax_Fraktur-Regular')}
+@font-face {font-family: MJXc-TeX-frak-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Fraktur-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Fraktur-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-frak-B; src: local('MathJax_Fraktur Bold'), local('MathJax_Fraktur-Bold')}
+@font-face {font-family: MJXc-TeX-frak-Bx; src: local('MathJax_Fraktur'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-frak-Bw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Fraktur-Bold.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Bold.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Fraktur-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-math-BI; src: local('MathJax_Math BoldItalic'), local('MathJax_Math-BoldItalic')}
+@font-face {font-family: MJXc-TeX-math-BIx; src: local('MathJax_Math'); font-weight: bold; font-style: italic}
+@font-face {font-family: MJXc-TeX-math-BIw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Math-BoldItalic.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Math-BoldItalic.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Math-BoldItalic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-R; src: local('MathJax_SansSerif'), local('MathJax_SansSerif-Regular')}
+@font-face {font-family: MJXc-TeX-sans-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-B; src: local('MathJax_SansSerif Bold'), local('MathJax_SansSerif-Bold')}
+@font-face {font-family: MJXc-TeX-sans-Bx; src: local('MathJax_SansSerif'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-sans-Bw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Bold.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Bold.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-I; src: local('MathJax_SansSerif Italic'), local('MathJax_SansSerif-Italic')}
+@font-face {font-family: MJXc-TeX-sans-Ix; src: local('MathJax_SansSerif'); font-style: italic}
+@font-face {font-family: MJXc-TeX-sans-Iw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Italic.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Italic.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-script-R; src: local('MathJax_Script'), local('MathJax_Script-Regular')}
+@font-face {font-family: MJXc-TeX-script-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Script-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Script-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Script-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-type-R; src: local('MathJax_Typewriter'), local('MathJax_Typewriter-Regular')}
+@font-face {font-family: MJXc-TeX-type-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Typewriter-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Typewriter-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Typewriter-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-cal-R; src: local('MathJax_Caligraphic'), local('MathJax_Caligraphic-Regular')}
+@font-face {font-family: MJXc-TeX-cal-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Caligraphic-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-B; src: local('MathJax_Main Bold'), local('MathJax_Main-Bold')}
+@font-face {font-family: MJXc-TeX-main-Bx; src: local('MathJax_Main'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-main-Bw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Main-Bold.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-I; src: local('MathJax_Main Italic'), local('MathJax_Main-Italic')}
+@font-face {font-family: MJXc-TeX-main-Ix; src: local('MathJax_Main'); font-style: italic}
+@font-face {font-family: MJXc-TeX-main-Iw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Main-Italic.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-R; src: local('MathJax_Main'), local('MathJax_Main-Regular')}
+@font-face {font-family: MJXc-TeX-main-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Main-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-math-I; src: local('MathJax_Math Italic'), local('MathJax_Math-Italic')}
+@font-face {font-family: MJXc-TeX-math-Ix; src: local('MathJax_Math'); font-style: italic}
+@font-face {font-family: MJXc-TeX-math-Iw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Math-Italic.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size1-R; src: local('MathJax_Size1'), local('MathJax_Size1-Regular')}
+@font-face {font-family: MJXc-TeX-size1-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Size1-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size2-R; src: local('MathJax_Size2'), local('MathJax_Size2-Regular')}
+@font-face {font-family: MJXc-TeX-size2-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Size2-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size3-R; src: local('MathJax_Size3'), local('MathJax_Size3-Regular')}
+@font-face {font-family: MJXc-TeX-size3-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Size3-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size4-R; src: local('MathJax_Size4'), local('MathJax_Size4-Regular')}
+@font-face {font-family: MJXc-TeX-size4-Rw; src /*1*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/eot/MathJax_Size4-Regular.eot'); src /*2*/: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf') format('opentype')}
+</style></head><body data-gr-c-s-loaded="true"><div id="MathJax_Message" style="display: none;"></div><p style="display: none">
+        <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="mjx-chtml MJXc-display" style="text-align: center;"><span id="MathJax-Element-1-Frame" class="mjx-chtml MathJax_CHTML" tabindex="0" style="font-size: 101%; text-align: center; position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot; /&gt;" role="presentation"><span id="MJXc-Node-1" class="mjx-math" aria-hidden="true"><span id="MJXc-Node-2" class="mjx-mrow"></span></span><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"></math></span></span></span><script type="math/tex; mode=display" id="MathJax-Element-1">
+            \newcommand{\dint}{\text{d}}
+            \newcommand{\vphi}{\boldsymbol{\phi}}
+            \newcommand{\vpi}{\boldsymbol{\pi}}
+            \newcommand{\vpsi}{\boldsymbol{\psi}}
+            \newcommand{\vomg}{\boldsymbol{\omega}}
+            \newcommand{\vsigma}{\boldsymbol{\sigma}}
+            \newcommand{\vzeta}{\boldsymbol{\zeta}}
+            \renewcommand{\vx}{\mathbf{x}}
+            \renewcommand{\vy}{\mathbf{y}}
+            \renewcommand{\vz}{\mathbf{z}}
+            \renewcommand{\vh}{\mathbf{h}}
+            \renewcommand{\b}{\mathbf}
+            \renewcommand{\vec}{\text{vec}}
+            \newcommand{\vecemph}{\text{\emph{vec}}}
+            \newcommand{\mvn}{\mathcal{MN}}
+            \newcommand{\G}{\mathcal{G}}
+            \newcommand{\M}{\mathcal{M}}
+            \newcommand{\N}{\mathcal{N}}
+            \newcommand{\S}{\mathcal{S}}
+            \newcommand{\diag}[1]{\text{diag}(#1)}
+            \newcommand{\diagemph}[1]{\text{\emph{diag}}(#1)}
+            \newcommand{\tr}[1]{\text{tr}(#1)}
+            \renewcommand{\C}{\mathbb{C}}
+            \renewcommand{\R}{\mathbb{R}}
+            \renewcommand{\E}{\mathbb{E}}
+            \newcommand{\D}{\mathcal{D}}
+            \newcommand{\inner}[1]{\langle #1 \rangle}
+            \newcommand{\innerbig}[1]{\left \langle #1 \right \rangle}
+            \newcommand{\abs}[1]{\lvert #1 \rvert}
+            \newcommand{\norm}[1]{\lVert #1 \rVert}
+            \newcommand{\two}{\text{II}}
+            \newcommand{\GL}{\text{GL}}
+            \newcommand{\Id}{\text{Id}}
+            \newcommand{\grad}[1]{\text{grad} \, #1}
+            \newcommand{\Hess}[1]{\text{Hess} \, #1}
+            \newcommand{\T}{\text{T}}
+            \newcommand{\dim}[1]{\text{dim} \, #1}
+        </script>
+    </p>
+
+
+
+
+
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top" style="background: black; border: none;">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="https://wiseodd.github.io/">Agustinus Kristiadi's Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+
+                
+                    
+                        <li>
+                            <a href="https://wiseodd.github.io/techblog/">Tech Blog</a>
+                        </li>
+                    
+                
+                    
+                        <li>
+                            <a href="https://wiseodd.github.io/travelblog/">Travel Blog</a>
+                        </li>
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                
+                    
+                        <li>
+                            <a href="https://wiseodd.github.io/about/">About Me &amp; CV</a>
+                        </li>
+                    
+                
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+
+    <!-- Post Header -->
+<!--<header class="intro-header" style="position: relative; background-image: url('/img/code.png');">
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <h1>Beyond SGD: Gradient Descent with Momentum and Adaptive Learning Rate</h1>
+                    
+                    <h2 class="subheading">There are many attempts to improve Gradient Descent: some add momentum, some add adaptive learning rate. Let's see what's out there in the realm of neural nets optimization.</h2>
+                    
+                    <span class="meta">Posted by wiseodd on June 22, 2016</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>-->
+
+<!--<header>
+    <div class="container">
+
+    </div>
+</header>-->
+
+<!-- Post Content -->
+<article style="padding-top: 125px;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post">
+                    <h1 style="text-align: center; font-size: 36px; padding-bottom: 2em;">Beyond SGD: Gradient Descent with Momentum and Adaptive Learning Rate</h1>
+                    <p>Last time, we <a href="https://wiseodd.github.io/techblog/2016/06/21/nn-sgd/">implemented</a>
+ Minibatch Gradient Descent to train our neural nets model. Using that 
+post as the base, we will look into another optimization algorithms that
+ are popular out there for training neural nets.</p>
+
+<p>I’ve since made an update to the last post’s SGD codes. Mainly, 
+making the algorithms to use random batch in each iteration, not the 
+whole dataset. However, the problem set and the neural nets model are 
+still the same. Let’s refresh the code:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_minibatch</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minibatch_size</span><span class="p">):</span>
+        <span class="n">X_mini</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">minibatch_size</span><span class="p">]</span>
+        <span class="n">y_mini</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">minibatch_size</span><span class="p">]</span>
+
+        <span class="n">minibatches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">minibatches</span>
+
+
+<span class="k">def</span> <span class="nf">sgd</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">model</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<h2 class="section-heading">SGD + Momentum</h2>
+
+<p>Imagine a car. The car is going through a mountain range. Being a 
+mountain range, naturally the terrain is hilly. Up and down, up and 
+down. But we, the driver of that car, only want to see the deepest 
+valley of the mountain. So, we want to stop at the part of the road that
+ has the lowest elevation.</p>
+
+<p>Only, there’s a problem: the car is just a box with wheels! So, we 
+can’t accelerate and brake at our will, we’re at the mercy of the 
+nature! So, we decided to start from the very top of the mountain road 
+and pray that Netwon blesses our journey.</p>
+
+<p>We’re moving now! As our “car” moving downhill, it’s gaining more and
+ more speed. We find that we’re going to get through a small hill. Will 
+this hill stop us? Not quite! Because we have been gaining a lot of 
+momentum! So, we pass that small hill. And another small hill after 
+that. And another. And another…</p>
+
+<p>Finally, after seems like forever, we find ourselves facing very tall
+ hill. Maybe it’s tall because it’s at the bottom of the mountain range?
+ Nevertheless, the hill is just too much for our “car”. Finally it 
+stops. And it’s true! We could already see the beautiful deepest valley 
+of the mountain!</p>
+
+<p>That’s exactly how momentum plays part in SGD. It uses physical law 
+of motion to go pass through local optima (small hills). Intuitively, 
+adding momentum will also make the convergence faster, as we’re 
+accumulating speed, so our Gradient Descent step could be larger, 
+compared to SGD’s constant step.</p>
+
+<p>Now the code!</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">momentum</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">velocity</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="o">.</span><span class="mi">9</span>
+
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span>
+            <span class="n">model</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">+=</span> <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p>What we do is to create a new velocity variable to store our momentum
+ for every parameter. The update of the velocity is given the old 
+velocity value and new Gradient Descent step <code class="highlighter-rouge">alpha * grad</code>. We also decay our past velocity so that we only consider the most recent velocities with <code class="highlighter-rouge">gamma = .9</code>.</p>
+
+<h2 class="section-heading">Nesterov Momentum</h2>
+
+<p>Very similar with momentum method above, Nesterov Momentum add one 
+little different bit to the momentum calculation. Instead of calculating
+ gradient of the current position, it calculates the gradient at the 
+approximated new position.</p>
+
+<p>Intuitively, because we have some momentum applied to our “car”, then
+ at the current position, we know where will our “car” end up one more 
+minute from the current time, ignoring any other variables.</p>
+
+<p>So, Nesterov Momentum exploits that knowledge, and instead of using 
+the current position’s gradient, it uses the next approximated 
+position’s gradient with the hope that it will give us better 
+information when we’re taking the next step.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">nesterov</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">velocity</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="o">.</span><span class="mi">9</span>
+
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">model_ahead</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">velocity</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model_ahead</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span>
+            <span class="n">model</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span> <span class="o">+=</span> <span class="n">velocity</span><span class="p">[</span><span class="n">layer</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p>Looking at the code, the only difference is that now we’re computing the gradient using <code class="highlighter-rouge">model_ahead</code>: approximated next state of our model parameters that we calculated by adding the momentum to the current parameters.</p>
+
+<h2 class="section-heading">Adagrad</h2>
+
+<p>Now, we’re entering a different realm. Let’s forget about our 
+disfunctional “car”! We’re going to approach the Gradient Descent from 
+different angle that we’ve been ignoring so far: the learning rate <code class="highlighter-rouge">alpha</code>.</p>
+
+<p>The problem with learning rate in Gradient Descent is that it’s 
+constant and affecting all of our parameters. What happen if we know 
+that we should slow down or speed up? What happen if we know that we 
+should accelerate more in this direction and decelerate in that 
+direction? Using our standard SGD, we’re out of luck.</p>
+
+<p>That’s why Adagrad was invented. It’s trying to solve that very problem.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">adagrad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p>Note that the parameters update is pointwise operation, hence the learning rate is adaptive <strong>per-parameter</strong>.</p>
+
+<p>What we do is to accumulate the sum of squared of all of our parameters’ gradient, and use that to normalize the learning rate <code class="highlighter-rouge">alpha</code>,
+ so that now our alpha could be smaller or larger depending on how the 
+past gradients behaved: parameters that updated a lot will be slowed 
+down while parameters that received little updates will be have bigger 
+learning rate to accelerate the learning process.</p>
+
+<p>One note to the implementation, the <code class="highlighter-rouge">eps</code>
+ there is useful to combat the division by zero, so that our 
+optimization becomes numerically stable. Usually it’s set with 
+considerably small value, like <code class="highlighter-rouge">1e-8</code>.</p>
+
+<h2 class="section-heading">RMSprop</h2>
+
+<p>If you notice, at the gradient accumulation part in Adagrad <code class="highlighter-rouge">cache[k] += grad[k]**2</code>,
+ it’s monotonically increasing (hint: sum and squared). This could be 
+problematic as the learning rate will be monotonically decreasing to the
+ point that the learning stops altogether because of the very tiny 
+learning rate.</p>
+
+<p>To combat that problem, RMSprop decay the past accumulated gradient, 
+so only a portion of past gradients are considered. Now, instead of 
+considering all of the past gradients, RMSprop behaves like moving 
+average.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">rmsprop</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="o">.</span><span class="mi">9</span>
+
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gamma</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p>The only difference compared to Adagrad is how we calculate the cache. Here, we’re take <code class="highlighter-rouge">gamma</code> portion of past accumulated sum of squared gradient, and take <code class="highlighter-rouge">1 - gamma</code>
+ portion of the current squared gradient. By doing this, the accumulated
+ gradient won’t be aggresively monotonically increasing, depending on 
+the gradients in the moving average window.</p>
+
+<h2 class="section-heading">Adam</h2>
+
+<p>Adam is the latest state of the art of first order optimization 
+method that’s widely used in the real world. It’s a modification of 
+RMSprop. Loosely speaking, Adam is RMSprop with momentum. So, Adam tries
+ to combine the best of both world of momentum and adaptive learning 
+rate.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">):</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">beta1</span> <span class="o">=</span> <span class="o">.</span><span class="mi">9</span>
+    <span class="n">beta2</span> <span class="o">=</span> <span class="o">.</span><span class="mi">999</span>
+
+    <span class="n">minibatches</span> <span class="o">=</span> <span class="n">get_minibatch</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">minibatch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="nb">iter</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatches</span><span class="p">))</span>
+        <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span> <span class="o">=</span> <span class="n">minibatches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">get_minibatch_grad</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_mini</span><span class="p">,</span> <span class="n">y_mini</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">grad</span><span class="p">:</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">beta1</span> <span class="o">*</span> <span class="n">M</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">beta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">R</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">beta2</span> <span class="o">*</span> <span class="n">R</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">beta2</span><span class="p">)</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+
+            <span class="n">m_k_hat</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">beta1</span><span class="o">**</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+            <span class="n">r_k_hat</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">beta2</span><span class="o">**</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+            <span class="n">model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">m_k_hat</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r_k_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p>Notice in the code, we still retain some RMSprop’s codes, namely when we calculate <code class="highlighter-rouge">R</code>. We also add some codes that are similar to how we compute momentum in the form of <code class="highlighter-rouge">M</code>.
+ Then, for the parameters update, it’s the combination of momentum 
+method and adaptive learning rate method: add the momentum, and 
+normalize the learning rate using the moving average squared gradient.</p>
+
+<p>Adam also has a bias correction mechanism, it’s calculated in <code class="highlighter-rouge">m_k_hat</code> and <code class="highlighter-rouge">r_k_hat</code>. It’s useful to make the convergence faster, at several first iterations. The reason is that we initialized <code class="highlighter-rouge">M</code> and <code class="highlighter-rouge">R</code> with zero, hence it will be biased toward zero in several first iterations, until they’re fully <em>warmed up</em>. The solution is to correct the bias and get the unbiased estimate of <code class="highlighter-rouge">M</code> and <code class="highlighter-rouge">R</code>. Please refer to the original paper, section 3: <a href="https://arxiv.org/pdf/1412.6980">https://arxiv.org/pdf/1412.6980</a>.</p>
+
+<p>As for the recommended value for the hyperparameter: <code class="highlighter-rouge">beta1 = 0.9</code>, <code class="highlighter-rouge">beta2 = 0.999</code>, <code class="highlighter-rouge">alpha = 1e-3</code>, and <code class="highlighter-rouge">eps = 1e-8</code>.</p>
+
+<h2 class="section-heading">Test and Comparison</h2>
+
+<p>With our bag full of those algorithms, let’s compare them using our previous problem in the last post. Here’s the setup:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n_iter</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-8</span>  <span class="c"># Smoothing to avoid division by zero</span>
+<span class="n">minibatch_size</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">n_experiment</span> <span class="o">=</span> <span class="mi">10</span>
+</code></pre></div></div>
+
+<p>We will run the algorithms to optimize our neural nets for 100 epochs
+ each, and we repeat them 3 times and average the accuracy score.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>alpha = 0.5
+
+sgd =&gt; mean accuracy: 0.4061333333333333, std: 0.15987773105998498
+adam =&gt; mean accuracy: 0.8607999999999999, std: 0.015892975387468082
+nesterov =&gt; mean accuracy: 0.47680000000000006, std: 5.551115123125783e-17
+rmsprop =&gt; mean accuracy: 0.8506666666666667, std: 0.007224649164876814
+adagrad =&gt; mean accuracy: 0.8754666666666667, std: 0.002639865316429748
+momentum =&gt; mean accuracy: 0.3152, std: 0.11427592339012915
+
+========================================================================
+
+alpha = 1e-2
+
+nesterov =&gt; mean accuracy: 0.8621333333333334, std: 0.024721021194297126
+rmsprop =&gt; mean accuracy: 0.8727999999999999, std: 0.010182337649086262
+sgd =&gt; mean accuracy: 0.8784000000000001, std: 0.0026127890589687525
+adam =&gt; mean accuracy: 0.8709333333333333, std: 0.01112993960251158
+momentum =&gt; mean accuracy: 0.8554666666666666, std: 0.016657597532524156
+adagrad =&gt; mean accuracy: 0.8786666666666667, std: 0.001359738536958064
+
+========================================================================
+
+alpha = 1e-5
+
+adagrad =&gt; mean accuracy: 0.504, std: 0.2635737973825673
+sgd =&gt; mean accuracy: 0.6509333333333334, std: 0.1101414040626362
+nesterov =&gt; mean accuracy: 0.8666666666666667, std: 0.016110727964792775
+rmsprop =&gt; mean accuracy: 0.30693333333333334, std: 0.028898596659507347
+momentum =&gt; mean accuracy: 0.8613333333333334, std: 0.02526728231439929
+adam =&gt; mean accuracy: 0.43039999999999995, std: 0.0842928229447798
+
+</code></pre></div></div>
+
+<p>Using large value for the learning rate, the adaptive learning rate methods are the winner here.</p>
+
+<p>However, the opposite happens when we’re using small learning rate value e.g. <code class="highlighter-rouge">1e-5</code>.
+ It’s small enough for vanilla SGD and momentum based methods to perform
+ well. On the other hand, as the learning rate is already very small, 
+and we normalizes it in the adaptive learning rate methods, it becomes 
+even smaller, which impacting the convergence rate. It makes the 
+learning becomes really slow and they perform worse than the vanilla SGD
+ with the same number of iteration.</p>
+
+<h2 class="section-heading">Conclusion</h2>
+
+<p>In this post we looked at the optimization algorithms for neural nets
+ beyond SGD. We looked at two classes of algorithms: momentum based and 
+adaptive learning rate methods.</p>
+
+<p>We also implement all of those methods in Python and Numpy with the use case of our neural nets stated in the <a href="https://wiseodd.github.io/techblog/2016/06/21/nn-sgd/">last post</a>.</p>
+
+<p>Most of those methods above are currently implemented in the popular 
+Deep Learning libraries like Tensorflow, Keras, and Caffe. However, Adam
+ is currently the default recommended algorithm to be used.</p>
+
+<p>You could find the full code used in this post here: <a href="https://gist.github.com/wiseodd/85ad008aef5585cec017f4f1e6d67a02">https://gist.github.com/wiseodd/85ad008aef5585cec017f4f1e6d67a02</a></p>
+
+<h2 class="section-heading">References</h2>
+
+<ul>
+  <li><a href="http://cs231n.github.io/neural-networks-3/">http://cs231n.github.io/neural-networks-3/</a></li>
+  <li><a href="http://sebastianruder.com/optimizing-gradient-descent/">http://sebastianruder.com/optimizing-gradient-descent/</a></li>
+  <li><a href="https://arxiv.org/pdf/1412.6980.pdf">https://arxiv.org/pdf/1412.6980.pdf</a></li>
+</ul>
+
+                </div>
+
+                <hr>
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://wiseodd.github.io/techblog/2016/06/21/nn-sgd/" data-toggle="tooltip" data-placement="top" title="" data-original-title="Implementing Minibatch Gradient Descent for Neural Networks">← Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="https://wiseodd.github.io/techblog/2016/06/25/dropout/" data-toggle="tooltip" data-placement="top" title="" data-original-title="Implementing Dropout in Neural Net">Next Post →</a>
+                    </li>
+                    
+                </ul>
+
+                <hr>
+
+            </div>
+        </div>
+    </div>
+</article>
+
+<hr>
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    <li>
+                        <a href="https://wiseodd.github.io/feed.xml">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        <a href="https://github.com/wiseodd">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">Copyright © Agustinus Kristiadi's Blog 2019</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/jquery.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/bootstrap.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/clean-blog.js"></script>
+
+<script src="Beyond%20SGD%20%20Gradient%20Descent%20with%20Momentum%20and%20Adaptive%20Learning%20Rate%20-%20Agustinus%20Kristiadi's%20Blog_files/MathJax.js" id=""></script>
+
+<script type="text/x-mathjax-config;executed=true">
+  MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+    }
+  });
+</script>
+
+
+
+
+
+</body></html>
